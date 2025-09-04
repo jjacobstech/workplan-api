@@ -1,0 +1,4020 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Task Management API",
+    "version": "1.0.0",
+    "description": "API for managing employee tasks and work plans"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://workplan-api.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "tools": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "time": {
+            "type": "string",
+            "format": "time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ]
+          },
+          "constraints": {
+            "type": "string"
+          }
+        }
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": [
+              "MONDAY",
+              "TUESDAY",
+              "WEDNESDAY",
+              "THURSDAY",
+              "FRIDAY",
+              "SATURDAY",
+              "SUNDAY"
+            ]
+          },
+          "task": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints"
+    },
+    {
+      "name": "Staff Actions",
+      "description": "User dashboard and task management"
+    },
+    {
+      "name": "Head Of Department",
+      "description": "HOD Authentication, Dashboard and Task Management"
+    }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register",
+        "description": "Register a new employee user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "department": {
+                    "type": "string"
+                  },
+                  "ministry": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "confirm_password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                },
+                "required": [
+                  "employee_id",
+                  "department",
+                  "ministry",
+                  "role",
+                  "unit",
+                  "password",
+                  "confirm_password"
+                ]
+              },
+              "example": {
+                "employee_id": "GHUM/HST/AA/1133",
+                "department": "Transport",
+                "ministry": "Ministry of Finance",
+                "unit": "Transport",
+                "role": "Driver",
+                "password": "123456789",
+                "confirm_password": "123456789"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "registration successful",
+                  "user_id": 1
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "User with this employee ID already exists"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "An error has occurred"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login",
+        "description": "Authenticate user and return access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                },
+                "required": [
+                  "employee_id",
+                  "password"
+                ]
+              },
+              "example": {
+                "employee_id": "GHUM/HST/AA/1133",
+                "password": "123456789"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "message": {
+                    "token": "472c4009db89c6eaca2faa11bbe0fde087f6374d12d4e403844084bc05774759"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout",
+        "description": "Logout the authenticated user",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "example": {
+                "id": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/dashboard": {
+      "get": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Dashboard",
+        "description": "Get staff dashboard data",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/plan/create": {
+      "post": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Create plan",
+        "description": "Create a new work plan with tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "plans": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "required": [
+                  "month",
+                  "week",
+                  "plans"
+                ]
+              },
+              "example": {
+                "month": "AUGUST",
+                "week": "WEEK_1",
+                "plans": [
+                  {
+                    "day": "MONDAY",
+                    "task": [
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "TUESDAY",
+                    "task": [
+                      {
+                        "title": "Team meeting",
+                        "notes": "Discuss project roadmap and blockers",
+                        "tools": "Zoom",
+                        "priority": "MEDIUM",
+                        "time": "11:00",
+                        "status": "IN_PROGRESS",
+                        "constraints": "All team members must be available, requires stable internet connection",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "WEDNESDAY",
+                    "task": [
+                      {
+                        "title": "Code review",
+                        "notes": "Review PR #42 from frontend team",
+                        "tools": "GitHub",
+                        "priority": "LOW",
+                        "time": "14:00",
+                        "status": "PENDING",
+                        "constraints": "PR must be submitted and ready for review, requires development environment access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "THURSDAY",
+                    "task": [
+                      {
+                        "title": "Write documentation",
+                        "notes": "Update API endpoints in Notion",
+                        "tools": "Notion",
+                        "priority": "MEDIUM",
+                        "time": "10:00",
+                        "status": "PENDING",
+                        "constraints": "API changes must be finalized, requires Notion workspace access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "FRIDAY",
+                    "task": [
+                      {
+                        "title": "Deploy new version",
+                        "notes": "Push v1.2 to production servers",
+                        "tools": "AWS CLI",
+                        "priority": "HIGH",
+                        "time": "16:00",
+                        "status": "PENDING",
+                        "constraints": "Code must pass all tests, requires production deployment permissions, maintenance window needed",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/plan": {
+      "get": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Get plans",
+        "description": "Retrieve all user plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/plan/tasks": {
+      "post": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Fetch Tasks",
+        "description": "Get tasks with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "priorityFilter": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "statusFilter": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST",
+                "priorityFilter": "HIGH",
+                "statusFilter": "PENDING"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Update Task",
+        "description": "Update task status and completion details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "task_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  },
+                  "completed": {
+                    "type": "string",
+                    "enum": [
+                      "YES",
+                      "NO"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan_id",
+                  "task_id",
+                  "status"
+                ]
+              },
+              "example": {
+                "plan_id": 2,
+                "task_id": 16,
+                "status": "COMPLETED",
+                "completed": "NO",
+                "reason": "lack of funds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/plan/report": {
+      "post": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Get Report",
+        "description": "Generate report with filters (Note: GET with requestBody is not standard, consider using POST)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/register": {
+      "parameters": [],
+      "post": {
+        "summary": "Register",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "confirm_password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOS/MH/1001",
+                "password": "password",
+                "confirm_password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/login": {
+      "parameters": [],
+      "post": {
+        "summary": "Login",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOS/MH/1001",
+                "password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/dashboard": {
+      "parameters": [],
+      "get": {
+        "summary": "Dashboard",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ]
+      }
+    },
+    "/api/hos/plan/create": {
+      "post": {
+        "tags": [
+          "HOS Actions"
+        ],
+        "summary": "Create plan",
+        "description": "Create a new work plan with tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "plans": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "required": [
+                  "month",
+                  "week",
+                  "plans"
+                ]
+              },
+              "example": {
+                "month": "AUGUST",
+                "week": "WEEK_1",
+                "plans": [
+                  {
+                    "day": "MONDAY",
+                    "task": [
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "TUESDAY",
+                    "task": [
+                      {
+                        "title": "Team meeting",
+                        "notes": "Discuss project roadmap and blockers",
+                        "tools": "Zoom",
+                        "priority": "MEDIUM",
+                        "time": "11:00",
+                        "status": "IN_PROGRESS",
+                        "constraints": "All team members must be available, requires stable internet connection",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "WEDNESDAY",
+                    "task": [
+                      {
+                        "title": "Code review",
+                        "notes": "Review PR #42 from frontend team",
+                        "tools": "GitHub",
+                        "priority": "LOW",
+                        "time": "14:00",
+                        "status": "PENDING",
+                        "constraints": "PR must be submitted and ready for review, requires development environment access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "THURSDAY",
+                    "task": [
+                      {
+                        "title": "Write documentation",
+                        "notes": "Update API endpoints in Notion",
+                        "tools": "Notion",
+                        "priority": "MEDIUM",
+                        "time": "10:00",
+                        "status": "PENDING",
+                        "constraints": "API changes must be finalized, requires Notion workspace access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "FRIDAY",
+                    "task": [
+                      {
+                        "title": "Deploy new version",
+                        "notes": "Push v1.2 to production servers",
+                        "tools": "AWS CLI",
+                        "priority": "HIGH",
+                        "time": "16:00",
+                        "status": "PENDING",
+                        "constraints": "Code must pass all tests, requires production deployment permissions, maintenance window needed",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/plan": {
+      "get": {
+        "tags": [
+          "HOS Actions"
+        ],
+        "summary": "Get plans",
+        "description": "Retrieve all user plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/plan/tasks": {
+      "post": {
+        "tags": [
+          "HOS Actions"
+        ],
+        "summary": "Fetch Tasks",
+        "description": "Get tasks with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "priorityFilter": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "statusFilter": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST",
+                "priorityFilter": "HIGH",
+                "statusFilter": "PENDING"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Update Task",
+        "description": "Update task status and completion details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "task_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  },
+                  "completed": {
+                    "type": "string",
+                    "enum": [
+                      "YES",
+                      "NO"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan_id",
+                  "task_id",
+                  "status"
+                ]
+              },
+              "example": {
+                "plan_id": 2,
+                "task_id": 16,
+                "status": "COMPLETED",
+                "completed": "NO",
+                "reason": "lack of funds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/plan/report": {
+      "post": {
+        "tags": [
+          "HOS Actions"
+        ],
+        "summary": "Get Report",
+        "description": "Generate report with filters (Note: GET with requestBody is not standard, consider using POST)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/dashboard/ministry": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Departments in a Ministry",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ministry_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "ministry_id": "2"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/dashboard/ministry/department": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Units in a Department",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ministry_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "department_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "ministry_id": "2",
+                "department_id": "2"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/dashboard/ministry/department/unit": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Staff in a Unit",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ministry_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "department_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "unit_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "ministry_id": "2",
+                "department_id": "2",
+                "unit_id": "3"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hos/dashboard/ministry/department/unit/staff": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Plan for a Staff",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": null
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/register": {
+      "parameters": [],
+      "post": {
+        "summary": "Register",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "ministry": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "confirm_password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/PS/MH/1111",
+                "ministry": "Ministry of Health",
+                "role": "Permanent Secretary",
+                "password": "password",
+                "confirm_password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/login": {
+      "parameters": [],
+      "post": {
+        "summary": "Login",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/PS/MH/1111",
+                "password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/dashboard": {
+      "parameters": [],
+      "get": {
+        "summary": "Dashboard",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string"
+                  },
+                  "month": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_4",
+                "month": "AUGUST"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/plan/create": {
+      "post": {
+        "tags": [
+          "PS Actions"
+        ],
+        "summary": "Create plan",
+        "description": "Create a new work plan with tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "plans": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "required": [
+                  "month",
+                  "week",
+                  "plans"
+                ]
+              },
+              "example": {
+                "month": "AUGUST",
+                "week": "WEEK_1",
+                "plans": [
+                  {
+                    "day": "MONDAY",
+                    "task": [
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "TUESDAY",
+                    "task": [
+                      {
+                        "title": "Team meeting",
+                        "notes": "Discuss project roadmap and blockers",
+                        "tools": "Zoom",
+                        "priority": "MEDIUM",
+                        "time": "11:00",
+                        "status": "IN_PROGRESS",
+                        "constraints": "All team members must be available, requires stable internet connection",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "WEDNESDAY",
+                    "task": [
+                      {
+                        "title": "Code review",
+                        "notes": "Review PR #42 from frontend team",
+                        "tools": "GitHub",
+                        "priority": "LOW",
+                        "time": "14:00",
+                        "status": "PENDING",
+                        "constraints": "PR must be submitted and ready for review, requires development environment access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "THURSDAY",
+                    "task": [
+                      {
+                        "title": "Write documentation",
+                        "notes": "Update API endpoints in Notion",
+                        "tools": "Notion",
+                        "priority": "MEDIUM",
+                        "time": "10:00",
+                        "status": "PENDING",
+                        "constraints": "API changes must be finalized, requires Notion workspace access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "FRIDAY",
+                    "task": [
+                      {
+                        "title": "Deploy new version",
+                        "notes": "Push v1.2 to production servers",
+                        "tools": "AWS CLI",
+                        "priority": "HIGH",
+                        "time": "16:00",
+                        "status": "PENDING",
+                        "constraints": "Code must pass all tests, requires production deployment permissions, maintenance window needed",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/plan": {
+      "get": {
+        "tags": [
+          "PS Actions"
+        ],
+        "summary": "Get plans",
+        "description": "Retrieve all user plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/plan/tasks": {
+      "post": {
+        "tags": [
+          "PS Actions"
+        ],
+        "summary": "Fetch Tasks",
+        "description": "Get tasks with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "priorityFilter": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "statusFilter": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST",
+                "priorityFilter": "HIGH",
+                "statusFilter": "PENDING"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Update Task",
+        "description": "Update task status and completion details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "task_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  },
+                  "completed": {
+                    "type": "string",
+                    "enum": [
+                      "YES",
+                      "NO"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan_id",
+                  "task_id",
+                  "status"
+                ]
+              },
+              "example": {
+                "plan_id": 2,
+                "task_id": 16,
+                "status": "COMPLETED",
+                "completed": "NO",
+                "reason": "lack of funds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/plan/report": {
+      "post": {
+        "tags": [
+          "PS Actions"
+        ],
+        "summary": "Get Report",
+        "description": "Generate report with filters (Note: GET with requestBody is not standard, consider using POST)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/dashboard/departments": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Unit in a Department",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "department_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "department_id": "4"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/dashboard/departments/unit": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Staff in a Unit",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "department_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "unit_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "week": {
+                    "type": "string"
+                  },
+                  "month": {
+                    "type": "string"
+                  },
+                  "role_filter": {
+                    "type": "string"
+                  },
+                  "status_filter": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "department_id": "3",
+                "unit_id": "2",
+                "week": "WEEK_1",
+                "month": "AUGUST",
+                "role_filter": "",
+                "status_filter": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ps/dashboard/departments/unit/staff": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Staff plan",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "PS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "department_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "unit_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "staff_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "week": {
+                    "type": "string"
+                  },
+                  "role_filter": {
+                    "type": "string"
+                  },
+                  "status_filter": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "department_id": "3",
+                "unit_id": "2",
+                "staff_id": "3",
+                "week": "WEEK_1",
+                "role_filter": "",
+                "status_filter": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/register": {
+      "parameters": [],
+      "post": {
+        "summary": "Register",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "ministry": {
+                    "type": "string"
+                  },
+                  "department": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "confirm_password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOD/TRS/1235",
+                "ministry": "Ministry of Health",
+                "department": "Human Resources",
+                "role": "Administrator",
+                "password": "password",
+                "confirm_password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/login": {
+      "parameters": [],
+      "post": {
+        "summary": "Login",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOD/TRS/1235",
+                "password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/dashboard": {
+      "parameters": [],
+      "get": {
+        "summary": "Dashboard",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ]
+      }
+    },
+    "/api/hod/plan/create": {
+      "post": {
+        "tags": [
+          "HOD Actions"
+        ],
+        "summary": "Create plan",
+        "description": "Create a new work plan with tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "plans": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "required": [
+                  "month",
+                  "week",
+                  "plans"
+                ]
+              },
+              "example": {
+                "month": "AUGUST",
+                "week": "WEEK_1",
+                "plans": [
+                  {
+                    "day": "MONDAY",
+                    "task": [
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "TUESDAY",
+                    "task": [
+                      {
+                        "title": "Team meeting",
+                        "notes": "Discuss project roadmap and blockers",
+                        "tools": "Zoom",
+                        "priority": "MEDIUM",
+                        "time": "11:00",
+                        "status": "IN_PROGRESS",
+                        "constraints": "All team members must be available, requires stable internet connection",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "WEDNESDAY",
+                    "task": [
+                      {
+                        "title": "Code review",
+                        "notes": "Review PR #42 from frontend team",
+                        "tools": "GitHub",
+                        "priority": "LOW",
+                        "time": "14:00",
+                        "status": "PENDING",
+                        "constraints": "PR must be submitted and ready for review, requires development environment access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "THURSDAY",
+                    "task": [
+                      {
+                        "title": "Write documentation",
+                        "notes": "Update API endpoints in Notion",
+                        "tools": "Notion",
+                        "priority": "MEDIUM",
+                        "time": "10:00",
+                        "status": "PENDING",
+                        "constraints": "API changes must be finalized, requires Notion workspace access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "FRIDAY",
+                    "task": [
+                      {
+                        "title": "Deploy new version",
+                        "notes": "Push v1.2 to production servers",
+                        "tools": "AWS CLI",
+                        "priority": "HIGH",
+                        "time": "16:00",
+                        "status": "PENDING",
+                        "constraints": "Code must pass all tests, requires production deployment permissions, maintenance window needed",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/plan": {
+      "get": {
+        "tags": [
+          "HOD Actions"
+        ],
+        "summary": "Get plans",
+        "description": "Retrieve all user plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/plan/tasks": {
+      "post": {
+        "tags": [
+          "HOD Actions"
+        ],
+        "summary": "Fetch Tasks",
+        "description": "Get tasks with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "priorityFilter": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "statusFilter": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST",
+                "priorityFilter": "HIGH",
+                "statusFilter": "PENDING"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Update Task",
+        "description": "Update task status and completion details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "task_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  },
+                  "completed": {
+                    "type": "string",
+                    "enum": [
+                      "YES",
+                      "NO"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan_id",
+                  "task_id",
+                  "status"
+                ]
+              },
+              "example": {
+                "plan_id": 2,
+                "task_id": 16,
+                "status": "COMPLETED",
+                "completed": "NO",
+                "reason": "lack of funds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/plan/report": {
+      "post": {
+        "tags": [
+          "HOD Actions"
+        ],
+        "summary": "Get Report",
+        "description": "Generate report with filters (Note: GET with requestBody is not standard, consider using POST)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/dashboard/unit": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Unit",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "unit_id": "3",
+                "role_filter": "driver",
+                "status_filter": "approved"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/dashboard/unit/staff": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Staff Plan",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "staff_id": "4",
+                "unit_id": "3",
+                "month": "AUGUST",
+                "week": "WEEK_1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/dashboard/unit/staff/report": {
+      "parameters": [],
+      "post": {
+        "summary": "Performance report",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "staff_id": "4",
+                "unit_id": "3",
+                "month": "AUGUST",
+                "week": "WEEK_1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hod/dashboard/unit/staff/report/approve": {
+      "parameters": [],
+      "post": {
+        "summary": "Performance report approval",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOD"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "unit_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "staff_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "plan_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "unit_id": "3",
+                "staff_id": "4",
+                "plan_id": "10"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/register": {
+      "parameters": [],
+      "post": {
+        "summary": "Register",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "ministry": {
+                    "type": "string"
+                  },
+                  "department": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "confirm_password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOU/TRS/1234",
+                "ministry": "Ministry of Health",
+                "department": "Human Resources",
+                "unit": "wardon",
+                "role": "Administrator",
+                "password": "password",
+                "confirm_password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/login": {
+      "parameters": [],
+      "post": {
+        "summary": "Login",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "employee_id": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "employee_id": "GHUM/HOU/TRS/1234",
+                "password": "password"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/dashboard": {
+      "parameters": [],
+      "post": {
+        "summary": "Dashboard",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "role_filter": "",
+                "status_filter": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/plan/create": {
+      "post": {
+        "tags": [
+          "HOU Actions"
+        ],
+        "summary": "Create plan",
+        "description": "Create a new work plan with tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "plans": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "required": [
+                  "month",
+                  "week",
+                  "plans"
+                ]
+              },
+              "example": {
+                "month": "AUGUST",
+                "week": "WEEK_1",
+                "plans": [
+                  {
+                    "day": "MONDAY",
+                    "task": [
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "04/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "TUESDAY",
+                    "task": [
+                      {
+                        "title": "Team meeting",
+                        "notes": "Discuss project roadmap and blockers",
+                        "tools": "Zoom",
+                        "priority": "MEDIUM",
+                        "time": "11:00",
+                        "status": "IN_PROGRESS",
+                        "constraints": "All team members must be available, requires stable internet connection",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "WEDNESDAY",
+                    "task": [
+                      {
+                        "title": "Code review",
+                        "notes": "Review PR #42 from frontend team",
+                        "tools": "GitHub",
+                        "priority": "LOW",
+                        "time": "14:00",
+                        "status": "PENDING",
+                        "constraints": "PR must be submitted and ready for review, requires development environment access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "THURSDAY",
+                    "task": [
+                      {
+                        "title": "Write documentation",
+                        "notes": "Update API endpoints in Notion",
+                        "tools": "Notion",
+                        "priority": "MEDIUM",
+                        "time": "10:00",
+                        "status": "PENDING",
+                        "constraints": "API changes must be finalized, requires Notion workspace access",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  },
+                  {
+                    "day": "FRIDAY",
+                    "task": [
+                      {
+                        "title": "Deploy new version",
+                        "notes": "Push v1.2 to production servers",
+                        "tools": "AWS CLI",
+                        "priority": "HIGH",
+                        "time": "16:00",
+                        "status": "PENDING",
+                        "constraints": "Code must pass all tests, requires production deployment permissions, maintenance window needed",
+                        "date": "05/07/2025"
+                      },
+                      {
+                        "title": "Finish report",
+                        "notes": "Include Q3 data and finalize charts",
+                        "priority": "HIGH",
+                        "time": "09:00",
+                        "status": "PENDING",
+                        "date": "05/07/2025"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/plan": {
+      "get": {
+        "tags": [
+          "HOU Actions"
+        ],
+        "summary": "Get plans",
+        "description": "Retrieve all user plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plans retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/plan/tasks": {
+      "post": {
+        "tags": [
+          "HOU Actions"
+        ],
+        "summary": "Fetch Tasks",
+        "description": "Get tasks with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  },
+                  "priorityFilter": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "statusFilter": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST",
+                "priorityFilter": "HIGH",
+                "statusFilter": "PENDING"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff Actions"
+        ],
+        "summary": "Update Task",
+        "description": "Update task status and completion details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "task_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
+                  },
+                  "completed": {
+                    "type": "string",
+                    "enum": [
+                      "YES",
+                      "NO"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan_id",
+                  "task_id",
+                  "status"
+                ]
+              },
+              "example": {
+                "plan_id": 2,
+                "task_id": 16,
+                "status": "COMPLETED",
+                "completed": "NO",
+                "reason": "lack of funds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/plan/report": {
+      "post": {
+        "tags": [
+          "HOU Actions"
+        ],
+        "summary": "Get Report",
+        "description": "Generate report with filters (Note: GET with requestBody is not standard, consider using POST)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "week": {
+                    "type": "string",
+                    "enum": [
+                      "WEEK_1",
+                      "WEEK_2",
+                      "WEEK_3",
+                      "WEEK_4"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "enum": [
+                      "JANUARY",
+                      "FEBRUARY",
+                      "MARCH",
+                      "APRIL",
+                      "MAY",
+                      "JUNE",
+                      "JULY",
+                      "AUGUST",
+                      "SEPTEMBER",
+                      "OCTOBER",
+                      "NOVEMBER",
+                      "DECEMBER"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "week": "WEEK_2",
+                "month": "AUGUST"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/dashboard/staff": {
+      "parameters": [],
+      "post": {
+        "summary": "Get Staff Plan",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "staff_id": "4",
+                "month": "AUGUST",
+                "week": "WEEK_2"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/dashboard/staff/report": {
+      "parameters": [],
+      "post": {
+        "summary": "Performance report",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "staff_id": "4",
+                "month": "AUGUST",
+                "week": "WEEK_1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hou/dashboard/staff/report/approve": {
+      "parameters": [],
+      "post": {
+        "summary": "Performance report approval",
+        "parameters": [],
+        "responses": {},
+        "tags": [
+          "HOU"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "staff_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "plan_id": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "staff_id": "4",
+                "plan_id": "10"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
